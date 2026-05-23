@@ -28,7 +28,12 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=409, detail="Email already registered")
 
     # Bootstrap empty profile and preferences so other endpoints never 404
-    db.add(Profile(user_id=user.id, display_name=body.email.split("@")[0]))
+    db.add(Profile(
+        user_id=user.id,
+        display_name=body.display_name,
+        gender=body.gender,
+        birth_date=body.birth_date,
+    ))
     db.add(DatingPreferences(user_id=user.id))
     db.commit()
 

@@ -116,7 +116,7 @@ def main() -> None:
         profiles: list[Profile] = []
         for u in users:
             bd = fake.date_of_birth(minimum_age=18, maximum_age=45)
-            gender = random.choice([*GENDERS, None])
+            gender = random.choice(GENDERS)
             city, country = random.choice(LOCATIONS)
             profile = Profile(
                 user_id=u.id,

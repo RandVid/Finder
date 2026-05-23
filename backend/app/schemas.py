@@ -12,8 +12,11 @@ from app.enums import Hobby, ProfileGender, SwipeDirection
 # ---------------------------------------------------------------------------
 
 class RegisterRequest(BaseModel):
+    display_name: str
     email: EmailStr
     password: str
+    gender: ProfileGender
+    birth_date: date
 
 
 class LoginRequest(BaseModel):
@@ -37,7 +40,7 @@ class ProfileOut(BaseModel):
     birth_date: date | None
     city: str | None
     country: str | None
-    gender: ProfileGender | None
+    gender: ProfileGender
     height_cm: int | None
     hobbies: list[Hobby]
     updated_at: datetime

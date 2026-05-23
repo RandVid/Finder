@@ -2,23 +2,41 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { register } from '../api/auth'
 import { useAuth } from '../context/AuthContext'
+import type { ProfileGender } from '../types'
+
+const GENDERS: { value: ProfileGender; label: string }[] = [
+  { value: 'woman', label: 'Woman' },
+  { value: 'man', label: 'Man' },
+  { value: 'nonbinary', label: 'Nonbinary' },
+]
+
+const MAX_BIRTH_DATE = (() => {
+  const d = new Date()
+  d.setFullYear(d.getFullYear() - 18)
+  return d.toISOString().split('T')[0]
+})()
 
 export default function RegisterPage() {
   const { login: saveToken } = useAuth()
   const navigate = useNavigate()
+  const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [gender, setGender] = useState<ProfileGender | null>(null)
+  const [birthDate, setBirthDate] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    if (!gender) { setError('Please select your gender'); return }
+    if (!birthDate) { setError('Please enter your birth date'); return }
     setError(null)
     setLoading(true)
     try {
-      const { access_token } = await register(email, password)
+      const { access_token } = await register(displayName, email, password, gender, birthDate)
       saveToken(access_token)
-      navigate('/discovery')
+      navigate('/setup')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed')
     } finally {
@@ -34,6 +52,17 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <input
+              type="text"
+              required
+              value={displayName}
+              onChange={e => setDisplayName(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+            />
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
               type="email"
@@ -43,6 +72,7 @@ export default function RegisterPage() {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
             />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
             <input
@@ -51,6 +81,38 @@ export default function RegisterPage() {
               minLength={6}
               value={password}
               onChange={e => setPassword(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">I am a</label>
+            <div className="flex gap-2">
+              {GENDERS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setGender(value)}
+                  className={`flex-1 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
+                    gender === value
+                      ? 'border-rose-500 bg-rose-50 text-rose-600'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date of birth</label>
+            <input
+              type="date"
+              required
+              max={MAX_BIRTH_DATE}
+              value={birthDate}
+              onChange={e => setBirthDate(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
             />
           </div>
@@ -68,9 +130,7 @@ export default function RegisterPage() {
 
         <p className="text-center text-sm text-gray-500 mt-4">
           Already have an account?{' '}
-          <Link to="/login" className="text-rose-500 hover:underline">
-            Log in
-          </Link>
+          <Link to="/login" className="text-rose-500 hover:underline">Log in</Link>
         </p>
       </div>
     </div>
