@@ -33,6 +33,7 @@ def _profile_out(profile: Profile, db: Session) -> ProfileOut:
         bio=profile.bio,
         birth_date=profile.birth_date,
         city=profile.city,
+        country=profile.country,
         gender=profile.gender,
         height_cm=profile.height_cm,
         hobbies=hobbies,
@@ -66,6 +67,8 @@ def update_my_profile(
         profile.birth_date = body.birth_date
     if body.city is not None:
         profile.city = body.city
+    if body.country is not None:
+        profile.country = body.country
     if body.gender is not None:
         profile.gender = body.gender
     if body.height_cm is not None:

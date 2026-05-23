@@ -26,7 +26,7 @@ export default function ProfileCard({ profile, onSmash, onPass, swiping }: Props
   const passOpacity = useTransform(x, [-120, -30], [1, 0])
 
   const age = profile.birth_date ? calcAge(profile.birth_date) : null
-  const subtitle = [age !== null ? `${age} years` : null, profile.gender, profile.city]
+  const subtitle = [age !== null ? `${age} years` : null, profile.gender, profile.city, profile.country]
     .filter(Boolean)
     .join(' · ')
 

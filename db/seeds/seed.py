@@ -83,6 +83,7 @@ def main() -> None:
                 bio=fake.paragraph(nb_sentences=2),
                 birth_date=bd,
                 city=fake.city(),
+                country=fake.country(),
                 gender=random.choice([*GENDERS, None]),
                 height_cm=random.randint(155, 198),
             )

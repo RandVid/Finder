@@ -76,6 +76,7 @@ class Profile(Base):
     bio: Mapped[str | None] = mapped_column(Text)
     birth_date: Mapped[date | None] = mapped_column(Date)
     city: Mapped[str | None] = mapped_column(String(120))
+    country: Mapped[str | None] = mapped_column(String(120))
     gender: Mapped[ProfileGender | None] = mapped_column(profile_gender_type)
     height_cm: Mapped[int | None] = mapped_column(Integer)
     updated_at: Mapped[datetime] = mapped_column(

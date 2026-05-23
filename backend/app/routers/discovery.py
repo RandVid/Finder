@@ -13,7 +13,7 @@ from app.schemas import DiscoveryBatch, ProfileOut
 router = APIRouter()
 
 _BATCH_SQL = text("""
-    SELECT p.user_id, p.display_name, p.bio, p.birth_date, p.city,
+    SELECT p.user_id, p.display_name, p.bio, p.birth_date, p.city, p.country,
            p.gender, p.height_cm, p.updated_at,
            (
                SELECT COUNT(*)
@@ -31,7 +31,10 @@ _BATCH_SQL = text("""
       AND (
           dp.user_id IS NULL
           OR NOT dp.prefer_same_city
-          OR p.city IS NOT DISTINCT FROM (SELECT city FROM profiles WHERE user_id = :me)
+          OR (
+              p.city IS NOT DISTINCT FROM (SELECT city FROM profiles WHERE user_id = :me)
+              AND p.country IS NOT DISTINCT FROM (SELECT country FROM profiles WHERE user_id = :me)
+          )
       )
       AND (
           dp.user_id IS NULL
@@ -86,6 +89,7 @@ def get_discovery_batch(
             bio=r["bio"],
             birth_date=r["birth_date"],
             city=r["city"],
+            country=r["country"],
             gender=r["gender"],
             height_cm=r["height_cm"],
             hobbies=hobbies_map[r["user_id"]],

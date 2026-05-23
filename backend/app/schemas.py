@@ -36,6 +36,7 @@ class ProfileOut(BaseModel):
     bio: str | None
     birth_date: date | None
     city: str | None
+    country: str | None
     gender: ProfileGender | None
     height_cm: int | None
     hobbies: list[Hobby]
@@ -49,6 +50,7 @@ class ProfileUpdateRequest(BaseModel):
     bio: str | None = None
     birth_date: date | None = None
     city: str | None = None
+    country: str | None = None
     gender: ProfileGender | None = None
     height_cm: int | None = None
     hobbies: list[Hobby] | None = None
