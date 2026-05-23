@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { updateMyProfile, updateMyPreferences } from '../api/profiles'
+import { updateMyProfile, updateMyPreferences, uploadPhoto } from '../api/profiles'
 import { ALL_HOBBIES, ALL_GENDERS, type Hobby, type ProfileGender } from '../types'
 
 function PillToggle<T extends string>({
@@ -40,6 +40,11 @@ export default function SetupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Photo
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   // Profile fields
   const [bio, setBio] = useState('')
   const [city, setCity] = useState('')
@@ -54,10 +59,20 @@ export default function SetupPage() {
   const [partnerGenders, setPartnerGenders] = useState<ProfileGender[]>([])
   const [partnerHobbies, setPartnerHobbies] = useState<Hobby[]>([])
 
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoFile(file)
+    setPhotoPreview(URL.createObjectURL(file))
+  }
+
   async function handleSubmit() {
     setError(null)
     setLoading(true)
     try {
+      if (photoFile) {
+        await uploadPhoto(photoFile)
+      }
       await updateMyProfile({
         bio: bio || undefined,
         city: city || undefined,
@@ -87,6 +102,38 @@ export default function SetupPage() {
           <h1 className="text-2xl font-bold text-gray-900">Set up your profile</h1>
           <p className="text-gray-500 text-sm mt-1">You can always update this later</p>
         </div>
+
+        {/* Photo */}
+        <section className="flex flex-col gap-4">
+          <h2 className="text-base font-semibold text-gray-700">Profile photo</h2>
+          <div className="flex flex-col items-center gap-3">
+            {photoPreview ? (
+              <img
+                src={photoPreview}
+                alt="Preview"
+                className="w-28 h-28 rounded-full object-cover border-2 border-rose-300"
+              />
+            ) : (
+              <div className="w-28 h-28 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-sm">
+                No photo
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handlePhotoChange}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-sm text-rose-500 hover:text-rose-600 font-medium"
+            >
+              {photoPreview ? 'Change photo' : 'Upload photo'}
+            </button>
+          </div>
+        </section>
 
         {/* Profile */}
         <section className="flex flex-col gap-4">

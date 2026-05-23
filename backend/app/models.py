@@ -79,6 +79,7 @@ class Profile(Base):
     country: Mapped[str | None] = mapped_column(String(120))
     gender: Mapped[ProfileGender] = mapped_column(profile_gender_type, nullable=False)
     height_cm: Mapped[int | None] = mapped_column(Integer)
+    photo_url: Mapped[str | None] = mapped_column(String(500))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
     )

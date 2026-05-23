@@ -14,7 +14,7 @@ router = APIRouter()
 
 _BATCH_SQL = text("""
     SELECT p.user_id, p.display_name, p.bio, p.birth_date, p.city, p.country,
-           p.gender, p.height_cm, p.updated_at,
+           p.gender, p.height_cm, p.photo_url, p.updated_at,
            (
                SELECT COUNT(*)
                FROM profile_hobbies ph_me
@@ -92,6 +92,7 @@ def get_discovery_batch(
             country=r["country"],
             gender=r["gender"],
             height_cm=r["height_cm"],
+            photo_url=r["photo_url"],
             hobbies=hobbies_map[r["user_id"]],
             updated_at=r["updated_at"],
         )

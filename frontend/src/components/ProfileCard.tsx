@@ -44,7 +44,7 @@ export default function ProfileCard({ profile, onSmash, onPass, swiping }: Props
 
   return (
     <motion.div
-      className="bg-white rounded-2xl shadow-md p-6 w-full max-w-xs mx-auto flex flex-col gap-3 cursor-grab active:cursor-grabbing select-none relative"
+      className="bg-white rounded-2xl shadow-md overflow-hidden w-full max-w-xs mx-auto flex flex-col cursor-grab active:cursor-grabbing select-none relative"
       style={{ x, rotate }}
       drag={swiping ? false : 'x'}
       dragMomentum={false}
@@ -53,42 +53,53 @@ export default function ProfileCard({ profile, onSmash, onPass, swiping }: Props
     >
       {/* Direction indicators */}
       <motion.div
-        className="absolute top-6 left-6 border-4 border-green-500 text-green-500 font-bold text-xl px-3 py-1 rounded-lg -rotate-12 pointer-events-none"
+        className="absolute top-6 left-6 border-4 border-green-500 text-green-500 font-bold text-xl px-3 py-1 rounded-lg -rotate-12 pointer-events-none z-10"
         style={{ opacity: smashOpacity }}
       >
         SMASH
       </motion.div>
       <motion.div
-        className="absolute top-6 right-6 border-4 border-red-500 text-red-500 font-bold text-xl px-3 py-1 rounded-lg rotate-12 pointer-events-none"
+        className="absolute top-6 right-6 border-4 border-red-500 text-red-500 font-bold text-xl px-3 py-1 rounded-lg rotate-12 pointer-events-none z-10"
         style={{ opacity: passOpacity }}
       >
         PASS
       </motion.div>
 
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800">{profile.display_name}</h2>
-        {subtitle && <p className="text-gray-500 mt-1 text-sm">{subtitle}</p>}
-        {profile.height_cm && (
-          <p className="text-gray-400 text-xs">{profile.height_cm} cm</p>
+      {profile.photo_url && (
+        <img
+          src={profile.photo_url}
+          alt={profile.display_name}
+          className="w-full h-56 object-cover"
+          draggable={false}
+        />
+      )}
+
+      <div className="p-6 flex flex-col gap-3">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">{profile.display_name}</h2>
+          {subtitle && <p className="text-gray-500 mt-1 text-sm">{subtitle}</p>}
+          {profile.height_cm && (
+            <p className="text-gray-400 text-xs">{profile.height_cm} cm</p>
+          )}
+        </div>
+
+        {profile.bio && (
+          <p className="text-gray-600 text-sm leading-relaxed">{profile.bio}</p>
+        )}
+
+        {profile.hobbies.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {profile.hobbies.map((h) => (
+              <span
+                key={h}
+                className="text-xs bg-rose-100 text-rose-700 px-3 py-1 rounded-full font-medium capitalize"
+              >
+                {h}
+              </span>
+            ))}
+          </div>
         )}
       </div>
-
-      {profile.bio && (
-        <p className="text-gray-600 text-sm leading-relaxed">{profile.bio}</p>
-      )}
-
-      {profile.hobbies.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {profile.hobbies.map((h) => (
-            <span
-              key={h}
-              className="text-xs bg-rose-100 text-rose-700 px-3 py-1 rounded-full font-medium capitalize"
-            >
-              {h}
-            </span>
-          ))}
-        </div>
-      )}
 
     </motion.div>
   )

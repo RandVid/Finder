@@ -42,6 +42,7 @@ class ProfileOut(BaseModel):
     country: str | None
     gender: ProfileGender
     height_cm: int | None
+    photo_url: str | None
     hobbies: list[Hobby]
     updated_at: datetime
 

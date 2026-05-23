@@ -118,6 +118,13 @@ def main() -> None:
             bd = fake.date_of_birth(minimum_age=18, maximum_age=45)
             gender = random.choice(GENDERS)
             city, country = random.choice(LOCATIONS)
+            photo_idx = random.randint(0, 99)
+            if gender == ProfileGender.MAN:
+                photo_url = f"https://randomuser.me/api/portraits/men/{photo_idx}.jpg"
+            elif gender == ProfileGender.WOMAN:
+                photo_url = f"https://randomuser.me/api/portraits/women/{photo_idx}.jpg"
+            else:
+                photo_url = f"https://randomuser.me/api/portraits/{random.choice(['men', 'women'])}/{photo_idx}.jpg"
             profile = Profile(
                 user_id=u.id,
                 display_name=_first_name(gender, fake),
@@ -127,6 +134,7 @@ def main() -> None:
                 country=country,
                 gender=gender,
                 height_cm=random.randint(155, 198),
+                photo_url=photo_url,
             )
             session.add(profile)
             profiles.append(profile)

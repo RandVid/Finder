@@ -27,6 +27,7 @@ export interface ProfileOut {
   country: string | null
   gender: ProfileGender
   height_cm: number | null
+  photo_url: string | null
   hobbies: Hobby[]
   updated_at: string
 }

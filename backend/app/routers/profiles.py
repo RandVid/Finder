@@ -36,6 +36,7 @@ def _profile_out(profile: Profile, db: Session) -> ProfileOut:
         country=profile.country,
         gender=profile.gender,
         height_cm=profile.height_cm,
+        photo_url=profile.photo_url,
         hobbies=hobbies,
         updated_at=profile.updated_at,
     )
