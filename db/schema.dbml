@@ -1,4 +1,4 @@
-// Finder — sync with db/schema.sql (Alembic 001 + 002 + 003 + 004)
+// Finder — sync with Alembic 001–008
 
 Enum swipe_direction {
   smash
@@ -41,8 +41,10 @@ Table profiles {
   bio text
   birth_date date
   city varchar(120)
-  gender profile_gender
+  country varchar(120)
+  gender profile_gender [not null]
   height_cm int
+  photo_url varchar(500)
   updated_at timestamptz [not null, default: `now()`]
 
   indexes {
@@ -50,7 +52,7 @@ Table profiles {
     (city) [name: "ix_profiles_city"]
   }
 
-  Note: 'Check: ck_profiles_height_cm — height_cm IS NULL OR (height_cm BETWEEN 120 AND 230)'
+  Note: 'Check: ck_profiles_height_cm — height_cm IS NULL OR (height_cm BETWEEN 120 AND 230). gender is NOT NULL (migration 007). photo_url points to /static/photos/ or an external URL (e.g. randomuser.me for seed data).'
 }
 
 Table profile_hobbies {

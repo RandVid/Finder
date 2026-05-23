@@ -61,6 +61,22 @@ uvicorn app.main:app --reload
 API is now running at **http://localhost:8000**.  
 Interactive docs (Swagger UI): **http://localhost:8000/docs**
 
+### 7. Install frontend dependencies
+
+```bash
+cd frontend
+npm install
+```
+
+### 8. Start the frontend dev server
+
+```bash
+# from frontend/
+npm run dev
+```
+
+App is now running at **http://localhost:5173**.
+
 ---
 
 ## Viewing the database
@@ -93,7 +109,9 @@ python scripts/verify_phase_a.py
 | `docker-compose.yml` | Local Postgres 16 |
 | `backend/app/main.py` | FastAPI entry point |
 | `backend/app/models.py` | SQLAlchemy models |
-| `backend/app/routers/` | Route handlers (auth, profiles, discovery, swipes, matches, messages, stats) |
+| `backend/app/routers/` | Route handlers (auth, profiles, photos, discovery, swipes, matches, messages, stats) |
+| `backend/static/photos/` | Uploaded profile photos served at `/static/photos/` |
+| `frontend/` | React + Vite + TypeScript + Tailwind CSS SPA |
 | `backend/alembic/` | Schema migrations |
 | `db/schema.dbml` | DBML for [dbdiagram.io](https://dbdiagram.io) |
 | `db/seeds/seed.py` | Faker seed script |
