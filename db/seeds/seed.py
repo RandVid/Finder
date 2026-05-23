@@ -41,6 +41,45 @@ from app.models import (  # noqa: E402
 HOBBIES = tuple(Hobby)
 GENDERS = tuple(ProfileGender)
 
+LOCATIONS = [
+    ("New York", "United States"),
+    ("Los Angeles", "United States"),
+    ("Chicago", "United States"),
+    ("London", "United Kingdom"),
+    ("Manchester", "United Kingdom"),
+    ("Paris", "France"),
+    ("Lyon", "France"),
+    ("Berlin", "Germany"),
+    ("Munich", "Germany"),
+    ("Tokyo", "Japan"),
+    ("Osaka", "Japan"),
+    ("Sydney", "Australia"),
+    ("Melbourne", "Australia"),
+    ("Toronto", "Canada"),
+    ("Vancouver", "Canada"),
+    ("Kyiv", "Ukraine"),
+    ("Lviv", "Ukraine"),
+    ("Warsaw", "Poland"),
+    ("Kraków", "Poland"),
+    ("Amsterdam", "Netherlands"),
+    ("Barcelona", "Spain"),
+    ("Madrid", "Spain"),
+    ("Rome", "Italy"),
+    ("Milan", "Italy"),
+    ("Prague", "Czech Republic"),
+    ("Vienna", "Austria"),
+    ("Stockholm", "Sweden"),
+    ("Oslo", "Norway"),
+]
+
+
+def _first_name(gender: ProfileGender | None, fake: Faker) -> str:
+    if gender == ProfileGender.WOMAN:
+        return fake.first_name_female()
+    if gender == ProfileGender.MAN:
+        return fake.first_name_male()
+    return fake.first_name()
+
 
 def age_years(birth: date, today: date | None = None) -> int:
     today = today or date.today()
@@ -77,14 +116,16 @@ def main() -> None:
         profiles: list[Profile] = []
         for u in users:
             bd = fake.date_of_birth(minimum_age=18, maximum_age=45)
+            gender = random.choice([*GENDERS, None])
+            city, country = random.choice(LOCATIONS)
             profile = Profile(
                 user_id=u.id,
-                display_name=fake.first_name(),
+                display_name=_first_name(gender, fake),
                 bio=fake.paragraph(nb_sentences=2),
                 birth_date=bd,
-                city=fake.city(),
-                country=fake.country(),
-                gender=random.choice([*GENDERS, None]),
+                city=city,
+                country=country,
+                gender=gender,
                 height_cm=random.randint(155, 198),
             )
             session.add(profile)
