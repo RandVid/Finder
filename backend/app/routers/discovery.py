@@ -14,7 +14,13 @@ router = APIRouter()
 
 _BATCH_SQL = text("""
     SELECT p.user_id, p.display_name, p.bio, p.birth_date, p.city,
-           p.gender, p.height_cm, p.updated_at
+           p.gender, p.height_cm, p.updated_at,
+           (
+               SELECT COUNT(*)
+               FROM profile_hobbies ph_me
+               JOIN profile_hobbies ph_them ON ph_them.hobby = ph_me.hobby
+               WHERE ph_me.user_id = :me AND ph_them.user_id = p.user_id
+           ) AS hobby_overlap
     FROM profiles p
     LEFT JOIN dating_preferences dp ON dp.user_id = :me
     WHERE p.user_id <> :me
@@ -48,7 +54,7 @@ _BATCH_SQL = text("""
               WHERE ph.user_id = p.user_id AND dph.user_id = :me
           )
       )
-    ORDER BY p.updated_at DESC NULLS LAST
+    ORDER BY hobby_overlap DESC, p.updated_at DESC NULLS LAST
     LIMIT 20
 """)
 
