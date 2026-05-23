@@ -105,7 +105,7 @@ def main() -> None:
         if session.query(User).first():
             raise SystemExit("Database already has users — truncate tables or use a fresh DB.")
 
-        n_users = 28
+        n_users = 280
         users: list[User] = []
         for _ in range(n_users):
             u = User(email=fake.unique.email(), password_hash="seed-not-for-production")
@@ -133,7 +133,7 @@ def main() -> None:
                 city=city,
                 country=country,
                 gender=gender,
-                height_cm=random.randint(155, 198),
+                height_cm=random.randint(165, 200) if gender == ProfileGender.MAN else random.randint(150, 185),
                 photo_url=photo_url,
             )
             session.add(profile)
