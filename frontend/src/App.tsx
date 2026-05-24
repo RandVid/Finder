@@ -3,6 +3,7 @@ import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import SetupPage from './pages/SetupPage'
 import DiscoveryPage from './pages/DiscoveryPage'
 import MatchesPage from './pages/MatchesPage'
 import ChatPage from './pages/ChatPage'
@@ -12,6 +13,10 @@ import StatsPage from './pages/StatsPage'
 const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
+  {
+    element: <ProtectedRoute />,
+    children: [{ path: '/setup', element: <SetupPage /> }],
+  },
   {
     element: <ProtectedRoute />,
     children: [

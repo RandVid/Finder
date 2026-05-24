@@ -24,8 +24,10 @@ export interface ProfileOut {
   bio: string | null
   birth_date: string | null
   city: string | null
-  gender: ProfileGender | null
+  country: string | null
+  gender: ProfileGender
   height_cm: number | null
+  photo_url: string | null
   hobbies: Hobby[]
   updated_at: string
 }
@@ -35,6 +37,7 @@ export interface ProfileUpdateRequest {
   bio?: string
   birth_date?: string
   city?: string
+  country?: string
   gender?: ProfileGender
   height_cm?: number
   hobbies?: Hobby[]

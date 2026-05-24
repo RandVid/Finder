@@ -1,13 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import {
-  getMyProfile,
-  getMyPreferences,
-  updateMyProfile,
-  updateMyPreferences,
-  uploadPhoto,
-} from '../api/profiles'
+import { updateMyProfile, updateMyPreferences, uploadPhoto } from '../api/profiles'
 import { ALL_HOBBIES, ALL_GENDERS, type Hobby, type ProfileGender } from '../types'
 
 function PillToggle<T extends string>({
@@ -42,37 +35,17 @@ function PillToggle<T extends string>({
   )
 }
 
-const GENDER_OPTIONS: { value: ProfileGender; label: string }[] = [
-  { value: 'woman', label: 'Woman' },
-  { value: 'man', label: 'Man' },
-  { value: 'nonbinary', label: 'Nonbinary' },
-]
-
-const MAX_BIRTH_DATE = (() => {
-  const d = new Date()
-  d.setFullYear(d.getFullYear() - 18)
-  return d.toISOString().split('T')[0]
-})()
-
-export default function ProfilePage() {
-  const { logout } = useAuth()
+export default function SetupPage() {
   const navigate = useNavigate()
-
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [saved, setSaved] = useState(false)
 
   // Photo
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Profile fields
-  const [displayName, setDisplayName] = useState('')
-  const [gender, setGender] = useState<ProfileGender>('man')
-  const [birthDate, setBirthDate] = useState('')
   const [bio, setBio] = useState('')
   const [city, setCity] = useState('')
   const [country, setCountry] = useState('')
@@ -86,29 +59,6 @@ export default function ProfilePage() {
   const [partnerGenders, setPartnerGenders] = useState<ProfileGender[]>([])
   const [partnerHobbies, setPartnerHobbies] = useState<Hobby[]>([])
 
-  useEffect(() => {
-    Promise.all([getMyProfile(), getMyPreferences()])
-      .then(([profile, prefs]) => {
-        setPhotoUrl(profile.photo_url)
-        setDisplayName(profile.display_name)
-        setGender(profile.gender)
-        setBirthDate(profile.birth_date ?? '')
-        setBio(profile.bio ?? '')
-        setCity(profile.city ?? '')
-        setCountry(profile.country ?? '')
-        setHeight(profile.height_cm != null ? String(profile.height_cm) : '')
-        setHobbies(profile.hobbies)
-
-        setAgeMin(prefs.partner_age_min != null ? String(prefs.partner_age_min) : '')
-        setAgeMax(prefs.partner_age_max != null ? String(prefs.partner_age_max) : '')
-        setPreferSameCity(prefs.prefer_same_city)
-        setPartnerGenders(prefs.partner_genders)
-        setPartnerHobbies(prefs.partner_hobbies)
-      })
-      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load profile'))
-      .finally(() => setLoading(false))
-  }, [])
-
   function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -116,23 +66,17 @@ export default function ProfilePage() {
     setPhotoPreview(URL.createObjectURL(file))
   }
 
-  async function handleSave() {
+  async function handleSubmit() {
     setError(null)
-    setSaving(true)
-    setSaved(false)
+    setLoading(true)
     try {
       if (photoFile) {
-        const url = await uploadPhoto(photoFile)
-        setPhotoUrl(url)
-        setPhotoFile(null)
+        await uploadPhoto(photoFile)
       }
       await updateMyProfile({
-        display_name: displayName || undefined,
         bio: bio || undefined,
-        birth_date: birthDate || undefined,
         city: city || undefined,
         country: country || undefined,
-        gender,
         height_cm: height ? Number(height) : undefined,
         hobbies: hobbies.length ? hobbies : undefined,
       })
@@ -143,44 +87,30 @@ export default function ProfilePage() {
         partner_genders: partnerGenders.length ? partnerGenders : undefined,
         partner_hobbies: partnerHobbies.length ? partnerHobbies : undefined,
       })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2500)
+      navigate('/discovery')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save')
+      setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
-      setSaving(false)
+      setLoading(false)
     }
   }
 
-  function handleLogout() {
-    logout()
-    navigate('/login')
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64 text-gray-400 text-sm">
-        Loading…
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4 pb-24">
+    <div className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="w-full max-w-sm mx-auto flex flex-col gap-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Your profile</h1>
-          <p className="text-gray-500 text-sm mt-1">Changes are saved immediately</p>
+          <h1 className="text-2xl font-bold text-gray-900">Set up your profile</h1>
+          <p className="text-gray-500 text-sm mt-1">You can always update this later</p>
         </div>
 
         {/* Photo */}
         <section className="flex flex-col gap-4">
-          <h2 className="text-base font-semibold text-gray-700">Photo</h2>
+          <h2 className="text-base font-semibold text-gray-700">Profile photo</h2>
           <div className="flex flex-col items-center gap-3">
-            {(photoPreview ?? photoUrl) ? (
+            {photoPreview ? (
               <img
-                src={photoPreview ?? photoUrl!}
-                alt="Profile"
+                src={photoPreview}
+                alt="Preview"
                 className="w-28 h-28 rounded-full object-cover border-2 border-rose-300"
               />
             ) : (
@@ -200,55 +130,14 @@ export default function ProfilePage() {
               onClick={() => fileInputRef.current?.click()}
               className="text-sm text-rose-500 hover:text-rose-600 font-medium"
             >
-              {photoPreview ?? photoUrl ? 'Change photo' : 'Upload photo'}
+              {photoPreview ? 'Change photo' : 'Upload photo'}
             </button>
           </div>
         </section>
 
-        {/* About you */}
+        {/* Profile */}
         <section className="flex flex-col gap-4">
           <h2 className="text-base font-semibold text-gray-700">About you</h2>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-            <input
-              type="text"
-              value={displayName}
-              onChange={e => setDisplayName(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
-            <div className="flex gap-2">
-              {GENDER_OPTIONS.map(({ value, label }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setGender(value)}
-                  className={`flex-1 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
-                    gender === value
-                      ? 'border-rose-500 bg-rose-50 text-rose-600'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date of birth</label>
-            <input
-              type="date"
-              max={MAX_BIRTH_DATE}
-              value={birthDate}
-              onChange={e => setBirthDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-rose-400"
-            />
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
@@ -358,21 +247,20 @@ export default function ProfilePage() {
         </section>
 
         {error && <p className="text-sm text-red-500">{error}</p>}
-        {saved && <p className="text-sm text-green-600">Saved!</p>}
 
         <button
-          onClick={handleSave}
-          disabled={saving}
+          onClick={handleSubmit}
+          disabled={loading}
           className="w-full bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white font-semibold rounded-xl py-3 transition-colors"
         >
-          {saving ? 'Saving…' : 'Save changes'}
+          {loading ? 'Saving…' : "Let's go!"}
         </button>
 
         <button
-          onClick={handleLogout}
-          className="w-full border border-gray-300 text-gray-500 hover:text-gray-700 hover:border-gray-400 font-medium rounded-xl py-3 text-sm transition-colors"
+          onClick={() => navigate('/discovery')}
+          className="text-center text-sm text-gray-400 hover:text-gray-600 -mt-4"
         >
-          Log out
+          Skip for now
         </button>
       </div>
     </div>
