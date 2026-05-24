@@ -137,3 +137,8 @@ class StatsOut(BaseModel):
     smashes_received: int
     total_matches: int
     avg_messages_per_match: float | None
+    smashes_made: int
+    passes_made: int
+    smash_success_rate: float | None
+    incoming_interest_rate: float | None
+    hard_to_get_rate: float | None
