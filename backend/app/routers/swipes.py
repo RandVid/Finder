@@ -60,6 +60,8 @@ def create_swipe(
                 db.flush()
                 match_id = match.id
                 match_created = True
+            else:
+                match_id = int(existing[0])
 
     db.commit()
     return SwipeResult(swipe_id=swipe.id, match_created=match_created, match_id=match_id)

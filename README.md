@@ -10,10 +10,14 @@ Custom Tinder-like dating app (course project). See [`docs/PHASES.md`](docs/PHAS
 
 ### 1. Environment
 
+Copy `.env.example` to `.env` at the **repo root** (same folder as `docker-compose.yml`):
+
 ```bash
 cp .env.example .env   # Mac/Linux
 copy .env.example .env # Windows
 ```
+
+Both **`DATABASE_URL`** and **`SECRET_KEY`** are required — auth returns 500 without `SECRET_KEY`.
 
 ### 2. Start PostgreSQL
 

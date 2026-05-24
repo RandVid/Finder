@@ -73,7 +73,11 @@ export interface MatchOut {
   id: number
   other_user_id: number
   other_display_name: string | null
+  other_photo_url: string | null
   created_at: string
+  last_message_body: string | null
+  last_message_at: string | null
+  last_message_image_url: string | null
 }
 
 export interface MessageOut {
@@ -81,6 +85,7 @@ export interface MessageOut {
   match_id: number
   sender_user_id: number
   body: string
+  image_url: string | null
   created_at: string
 }
 

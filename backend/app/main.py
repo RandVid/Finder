@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from dotenv import load_dotenv
-load_dotenv()
-
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Repo root .env (not backend/) — same layout as seed script and docker-compose.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(_REPO_ROOT / ".env")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

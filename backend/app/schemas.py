@@ -113,7 +113,11 @@ class MatchOut(BaseModel):
     id: int
     other_user_id: int
     other_display_name: str | None
+    other_photo_url: str | None = None
     created_at: datetime
+    last_message_body: str | None = None
+    last_message_at: datetime | None = None
+    last_message_image_url: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -121,7 +125,7 @@ class MatchOut(BaseModel):
 # ---------------------------------------------------------------------------
 
 class MessageRequest(BaseModel):
-    body: str
+    body: str = ""
 
 
 class MessageOut(BaseModel):
@@ -129,6 +133,7 @@ class MessageOut(BaseModel):
     match_id: int
     sender_user_id: int
     body: str
+    image_url: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
