@@ -35,7 +35,7 @@ async def upload_photo(
     filename = f"{current_user.id}.{ext}"
     (STATIC_DIR / filename).write_bytes(await file.read())
 
-    photo_url = f"{BASE_URL}/static/photos/{filename}"
+    photo_url = f"/static/photos/{filename}"
 
     profile = db.get(Profile, current_user.id)
     if not profile:
