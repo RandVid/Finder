@@ -7,6 +7,7 @@ import SetupPage from './pages/SetupPage'
 import DiscoveryPage from './pages/DiscoveryPage'
 import MatchesPage from './pages/MatchesPage'
 import ChatPage from './pages/ChatPage'
+import MatchProfilePage from './pages/MatchProfilePage'
 import ProfilePage from './pages/ProfilePage'
 import StatsPage from './pages/StatsPage'
 
@@ -26,6 +27,7 @@ const router = createBrowserRouter([
           { path: '/', element: <Navigate to="/discovery" replace /> },
           { path: '/discovery', element: <DiscoveryPage /> },
           { path: '/matches', element: <MatchesPage /> },
+          { path: '/matches/:id/profile', element: <MatchProfilePage /> },
           { path: '/matches/:id', element: <ChatPage /> },
           { path: '/profile', element: <ProfilePage /> },
           { path: '/stats', element: <StatsPage /> },

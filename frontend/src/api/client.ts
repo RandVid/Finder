@@ -24,7 +24,14 @@ async function request<T>(
   }
   if (token) headers['Authorization'] = `Bearer ${token}`
 
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
+  let res: Response
+  try {
+    res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
+  } catch {
+    throw new Error(
+      `Cannot reach the API at ${BASE_URL}. Start the backend: cd backend && uvicorn app.main:app --reload`,
+    )
+  }
 
   if (res.status === 401) {
     clearToken()
@@ -34,7 +41,14 @@ async function request<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body?.detail ?? `Request failed: ${res.status}`)
+    const detail = body?.detail
+    const message =
+      typeof detail === 'string'
+        ? detail
+        : Array.isArray(detail)
+          ? detail.map((d: { msg?: string }) => d.msg).filter(Boolean).join(', ')
+          : `Request failed: ${res.status}`
+    throw new Error(message)
   }
 
   if (res.status === 204) return undefined as T

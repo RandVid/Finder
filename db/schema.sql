@@ -93,7 +93,8 @@ CREATE TABLE messages (
     id SERIAL PRIMARY KEY,
     match_id INTEGER NOT NULL REFERENCES matches (id) ON DELETE CASCADE,
     sender_user_id INTEGER NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    body TEXT NOT NULL,
+    body TEXT NOT NULL DEFAULT '',
+    image_url VARCHAR(512),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
