@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { getMatchProfile } from '../api/matches'
-import UserStatsPlaceholder from '../components/UserStatsPlaceholder'
+import { getMatchProfile, getMatchStats } from '../api/matches'
+import UserStatsCompact from '../components/UserStatsCompact'
 
 function calcAge(birthDate: string): number {
   const today = new Date()
@@ -23,6 +23,12 @@ export default function MatchProfilePage() {
   const { data: profile, isLoading, isError } = useQuery({
     queryKey: ['match-profile', matchId],
     queryFn: () => getMatchProfile(matchId),
+    enabled: Number.isFinite(matchId) && matchId > 0,
+  })
+
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['match-stats', matchId],
+    queryFn: () => getMatchStats(matchId),
     enabled: Number.isFinite(matchId) && matchId > 0,
   })
 
@@ -136,7 +142,10 @@ export default function MatchProfilePage() {
             </div>
           )}
 
-          <UserStatsPlaceholder />
+          {statsLoading && (
+            <p className="text-sm text-gray-400 text-center py-2">Loading activity…</p>
+          )}
+          {stats && <UserStatsCompact stats={stats} />}
         </div>
       </div>
     </div>

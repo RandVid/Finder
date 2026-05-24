@@ -8,7 +8,8 @@ from app.db import get_db
 from app.dependencies import get_current_user
 from app.models import Match, Message, Profile, User
 from app.routers.profiles import _profile_out
-from app.schemas import MatchOut, ProfileOut
+from app.schemas import MatchOut, ProfileOut, StatsOut
+from app.services.stats import compute_user_stats
 
 router = APIRouter()
 
@@ -83,3 +84,19 @@ def get_match_partner_profile(
     if not profile:
         raise HTTPException(404, "Profile not found")
     return _profile_out(profile, db)
+
+
+@router.get("/{match_id}/stats", response_model=StatsOut)
+def get_match_partner_stats(
+    match_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """30-day activity stats for your match partner — only if you are in this match."""
+    match = _get_match_for_user(match_id, current_user.id, db)
+    other_id = (
+        match.user_high_id
+        if match.user_low_id == current_user.id
+        else match.user_low_id
+    )
+    return compute_user_stats(db, other_id)
