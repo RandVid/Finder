@@ -89,4 +89,9 @@ export interface StatsOut {
   smashes_received: number
   total_matches: number
   avg_messages_per_match: number | null
+  smashes_made: number
+  passes_made: number
+  smash_success_rate: number | null
+  incoming_interest_rate: number | null
+  hard_to_get_rate: number | null
 }
