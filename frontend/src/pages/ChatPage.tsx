@@ -41,6 +41,7 @@ export default function ChatPage() {
     queryFn: () => getMessages(matchId),
     enabled: Number.isFinite(matchId) && matchId > 0,
     refetchInterval: 3000,
+    retry: false,
   })
 
   const invalidate = () => {
@@ -98,6 +99,24 @@ export default function ChatPage() {
     )
   }
 
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-7rem)] gap-4 text-center px-6">
+        <div className="text-6xl">🕵️</div>
+        <h2 className="text-2xl font-bold text-gray-800">Lol nice try bozo</h2>
+        <p className="text-gray-500 text-sm max-w-xs">
+          This chat doesn't exist, or you weren't invited. We have people watching.
+        </p>
+        <Link
+          to="/matches"
+          className="mt-2 px-5 py-2 bg-rose-500 hover:bg-rose-600 text-white text-sm font-semibold rounded-xl transition-colors"
+        >
+          Back to my actual matches
+        </Link>
+      </div>
+    )
+  }
+
   const sending = sendingText || sendingPhoto
   const title = match?.other_display_name ?? 'Chat'
 
@@ -131,10 +150,7 @@ export default function ChatPage() {
         {isLoading && (
           <p className="text-center text-gray-400 text-sm">Loading messages…</p>
         )}
-        {isError && (
-          <p className="text-center text-red-400 text-sm">Failed to load messages.</p>
-        )}
-        {!isLoading && messages.length === 0 && (
+{!isLoading && messages.length === 0 && (
           <p className="text-center text-gray-400 text-sm py-8">
             No messages yet. Say hi!
           </p>
