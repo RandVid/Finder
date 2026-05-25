@@ -1,34 +1,34 @@
-# Finder — database description (course submission draft)
+# Finder — database description (course submission)
 
-This file is meant to match what database courses usually ask for: **domain**, **entities**, **user paths**, and enough detail that someone could **reconstruct the schema from prose alone**. Polish wording in your final PDF/report as needed.
+This document covers **domain**, **entities**, **user paths**, and enough detail that someone could **reconstruct the schema from prose alone**.
 
 ---
 
-## 1. Domain (field)
+## 1. Domain
 
-**Finder** is a **web dating** product: people register, maintain a **profile**, **swipe** (smash or pass) on other profiles, and when two users **mutually smash** each other the system creates a **match**. Matched users can exchange **messages**. Separately, each user can record **dating preferences** (age range, genders, hair colors, same-city bias)—these are **stated filters**, distinct from **observable traits** on profiles (e.g. gender, birth date → age, hair color, height).
+**Finder** is a **web-based dating application**: users register, maintain a **profile**, **swipe** (smash or pass) on other profiles, and when two users **mutually smash** each other the system creates a **match**. Matched users can exchange **messages** (text or photos). Each user can also record **dating preferences** (age range, accepted partner genders, desired partner hobbies, same-city bias) — these are *stated filters*, distinct from *observable traits* on profiles (gender, birth date → age, city, country, height, hobbies).
 
 ---
 
 ## 2. What you need to know to reconstruct the schema
 
-If you only had this description, you should infer roughly:
+1. **users** — One row per account (`email` unique). Authentication material is `password_hash` only.
 
-1. **users** — One row per login identity (`email` unique). Authentication material is stored as `password_hash` (implementation detail of the app).
+2. **profiles** — At most **one** profile per user (`user_id` primary key → `users`). Stores presentation and measurable traits: display name, bio, birth date, city, country, Postgres **ENUM** `gender` (`woman` / `man` / `nonbinary`, **NOT NULL**), optional height in cm, optional `photo_url`, and `updated_at`.
 
-2. **profiles** — At most **one** profile per user (`user_id` primary key → `users`). Stores presentation and **measurable traits**: display name, bio, birth date, city, **Postgres ENUM** fields for `gender`, `looking_for`, and `hair_color`, optional height in cm, plus `updated_at` for edits.
+3. **profile_hobbies** — **1NF child table**: one row per `(user_id, hobby)` the user has. `hobby` is a Postgres ENUM with 14 values (`hiking`, `gaming`, `cooking`, …). Storing hobbies as a `TEXT[]` array would violate 1NF; a separate table allows indexing and joining.
 
-3. **dating_preferences** — At most **one** row per user (`user_id` PK/FK → `users`) for **scalar** filters: min/max partner age and `prefer_same_city`. Multi-valued filters are **not** stored as arrays (that would violate strict **1NF**); instead:
-   - **dating_preference_genders** — one row per `(user_id, gender)` the user accepts;
-   - **dating_preference_hair_colors** — one row per `(user_id, hair_color)` the user accepts.
+4. **dating_preferences** — At most **one** row per user (`user_id` PK/FK → `users`) for **scalar** filters: `partner_age_min`, `partner_age_max`, `prefer_same_city`. Multi-valued filters are **not** stored as arrays:
+   - **dating_preference_genders** — one row per `(user_id, gender)` the user accepts as a partner;
+   - **dating_preference_hobbies** — one row per `(user_id, hobby)` the user wants their partner to share.
 
-4. **swipes** — Directed actions: who swiped, on whom, `direction` ENUM (`smash` / `pass`), timestamp. **No duplicate** decision for the same ordered pair `(swiper, target)`. A user cannot swipe themselves.
+5. **swipes** — Directed events: who swiped, on whom, `direction` ENUM (`smash` / `pass`), timestamp. A **UNIQUE** constraint on `(swiper_user_id, target_user_id)` prevents duplicate decisions. A user cannot swipe themselves (`CHECK swiper_user_id <> target_user_id`).
 
-5. **matches** — Undirected pair of two distinct users who have **mutually smashed** each other (business rule enforced in the application when inserting). The database stores the pair as **`user_low_id` < `user_high_id`** so the same two people always map to **one** row (see §3).
+6. **matches** — Undirected pair of two users who **mutually smashed**. The pair is stored canonically as **`user_low_id` < `user_high_id`** (enforced by `CHECK` + `UNIQUE`) so the same two people always map to **one** row (see §3).
 
-6. **messages** — Belongs to a **match** via `match_id` (the chat thread). Each row has **sender**, **body**, **timestamp**. When a user opens a conversation from the match list, the app uses that match’s `id` and loads `messages` for that `match_id`. Storing both participant user ids on every message would duplicate the match entity and make “all messages in this chat” harder to index. (Optional future constraint: sender must be one of the two users in the match.)
+7. **messages** — Belongs to a **match** via `match_id` (the conversation thread). Each row stores sender, `body` (text), optional `image_url` (photo attachment), and timestamp.
 
-You should also expect **foreign keys with ON DELETE CASCADE** from children to parents, **indexes** on foreign keys and common time-range / filter columns, **Postgres ENUM** types for controlled vocabularies, and **CHECK** constraints for ordering (`user_low_id < user_high_id`) and plausible numeric ranges (heights, ages).
+You should also expect **foreign keys with ON DELETE CASCADE**, **indexes** on foreign keys and filter columns, **Postgres ENUM** types for controlled vocabularies, and **CHECK** constraints for ordering (`user_low_id < user_high_id`) and plausible ranges (heights 120–230 cm, ages 18–99).
 
 ---
 
@@ -36,74 +36,145 @@ You should also expect **foreign keys with ON DELETE CASCADE** from children to 
 
 A match is a **relationship between two users** with no natural order. If we stored `(user_a_id, user_b_id)` without rules, the same match could appear twice as `(2, 5)` and `(5, 2)`.
 
-**Convention:** always store the smaller `users.id` in **`user_low_id`** and the larger in **`user_high_id`**, with a **CHECK** constraint `user_low_id < user_high_id` and a **UNIQUE** constraint on `(user_low_id, user_high_id)`. The application computes `low = min(a,b)`, `high = max(a,b)` before insert.
+**Convention:** always store the smaller `users.id` in `user_low_id` and the larger in `user_high_id`, with a `CHECK user_low_id < user_high_id` and `UNIQUE (user_low_id, user_high_id)`. The application computes `low = min(a, b)`, `high = max(a, b)` before every insert.
 
-To “find my matches” for user `U`, query:
-
-`WHERE user_low_id = U OR user_high_id = U`.
+To find all matches for user `U`:
+```sql
+WHERE user_low_id = U OR user_high_id = U
+```
 
 ---
 
-## 4. Entities (tables) — short glossary
+## 4. Entities (tables)
 
 | Table | Meaning |
 |-------|---------|
-| users | Account. |
-| profiles | Public-facing facts about the user (traits used in stats). |
-| dating_preferences | Scalar partner filters (age range, same-city bias). |
-| dating_preference_genders | Allowed partner genders (1NF child rows). |
-| dating_preference_hair_colors | Allowed partner hair colors (1NF child rows). |
-| swipes | Smash/pass events (directed). |
-| matches | Mutual-smash pairs (canonical undirected storage). |
-| messages | Chat inside a match (`match_id` = thread). |
+| `users` | Account — login identity. |
+| `profiles` | Public-facing facts and traits (gender, age, city, hobbies, photo). |
+| `profile_hobbies` | Hobbies a user has (1NF child of profiles). |
+| `dating_preferences` | Scalar partner filters (age range, same-city bias). |
+| `dating_preference_genders` | Partner genders the user accepts (1NF child). |
+| `dating_preference_hobbies` | Partner hobbies the user desires (1NF child). |
+| `swipes` | Smash/pass events (directed, one per ordered pair). |
+| `matches` | Mutual-smash pairs (canonical undirected storage). |
+| `messages` | Chat messages inside a match (`match_id` = thread). |
 
 ---
 
 ## 5. Critical user paths (scenarios)
 
-1. **Sign up** → insert `users` (+ `password_hash`), then `profiles`, then optional `dating_preferences` + child rows.
-2. **Edit profile** → update `profiles` (and traits like `hair_color`).
-3. **Set preferences** → insert/update `dating_preferences` and replace rows in `dating_preference_genders` / `dating_preference_hair_colors`.
-4. **Discovery** → one batch query: not self, not already in `swipes`, optional filters (`looking_for`, `city`, `updated_at`, `dating_preferences` + child tables); then insert `swipes` per card (Phase B API).
-5. **Swipe / match** → if reciprocal `smash` exists, insert `matches` with ordered pair.
+1. **Sign up** → INSERT `users`, then INSERT `profiles` (display name, gender, birth date), then INSERT `dating_preferences` + child rows.
+2. **Edit profile** → UPDATE `profiles`; replace rows in `profile_hobbies` (DELETE old + INSERT new).
+3. **Set preferences** → UPDATE `dating_preferences`; replace rows in `dating_preference_genders` and `dating_preference_hobbies`.
+4. **Discovery** → one batch query: exclude self, exclude already-swiped users, apply preference filters (gender, age, same city+country, partner hobbies); sort by hobby overlap DESC; LIMIT 20. Then INSERT `swipes` per card.
+5. **Swipe / match** → after a smash swipe, check if the reverse smash exists; if yes, INSERT `matches` with ordered pair.
 6. **Chat** → user selects a match → `SELECT messages WHERE match_id = ? ORDER BY created_at`.
 
 ---
 
-## 6. Preferences vs “who I actually matched and talked to”
+## 6. 1NF and multi-valued attributes
 
-- **Stated preferences** live in **`dating_preferences`** and its child tables.
-- **Revealed behavior** is derived by joining:
-  - `matches` (who you matched with),
-  - `messages` (whether/how much you talked—e.g. message count, last message time),
-  - the **partner’s** `profiles` row (their gender, `hair_color`, age from `birth_date`).
+Three sets of multi-valued attributes exist in this domain: a user's own hobbies, their accepted partner genders, and their desired partner hobbies. All three are stored as **separate child tables** rather than arrays or comma-separated strings:
 
-Example analysis ideas (all **SQL-friendly**):
-
-- Average **partner age** per user among matches in the last 30 days vs `partner_age_min` / `partner_age_max`.
-- Share of partners whose **`gender`** appears in `dating_preference_genders` (join or `EXISTS`).
-- Share of partners whose **`hair_color`** appears in `dating_preference_hair_colors`.
-- Among users with `prefer_same_city = true`, fraction of matches where `profiles.city` matches.
+| Attribute | Table | Why not an array? |
+|-----------|-------|-------------------|
+| User hobbies | `profile_hobbies` | Enables `JOIN` for overlap scoring, indexing by hobby |
+| Accepted partner genders | `dating_preference_genders` | Consistent filtering with `IN (SELECT …)` |
+| Desired partner hobbies | `dating_preference_hobbies` | Same pattern; `EXISTS` join in discovery query |
 
 ---
 
-## 7. DDL sources in the repo
+## 7. Discovery SQL (key query)
+
+The discovery batch query combines all hard filters and soft ranking in one statement:
+
+```sql
+SELECT p.user_id, p.display_name, p.bio, p.birth_date, p.city, p.country,
+       p.gender, p.height_cm, p.photo_url, p.updated_at,
+       (
+           SELECT COUNT(*)
+           FROM profile_hobbies ph_me
+           JOIN profile_hobbies ph_them ON ph_them.hobby = ph_me.hobby
+           WHERE ph_me.user_id = :me AND ph_them.user_id = p.user_id
+       ) AS hobby_overlap
+FROM profiles p
+LEFT JOIN dating_preferences dp ON dp.user_id = :me
+WHERE p.user_id <> :me
+  -- exclude already-swiped profiles
+  AND NOT EXISTS (
+      SELECT 1 FROM swipes s
+      WHERE s.swiper_user_id = :me AND s.target_user_id = p.user_id
+  )
+  -- same city preference: both city AND country must match
+  AND (
+      dp.user_id IS NULL OR NOT dp.prefer_same_city
+      OR (
+          p.city    IS NOT DISTINCT FROM (SELECT city    FROM profiles WHERE user_id = :me)
+          AND p.country IS NOT DISTINCT FROM (SELECT country FROM profiles WHERE user_id = :me)
+      )
+  )
+  -- age filter
+  AND (
+      dp.user_id IS NULL OR p.birth_date IS NULL
+      OR dp.partner_age_min IS NULL OR dp.partner_age_max IS NULL
+      OR EXTRACT(YEAR FROM age(p.birth_date)) BETWEEN dp.partner_age_min AND dp.partner_age_max
+  )
+  -- gender filter
+  AND (
+      dp.user_id IS NULL
+      OR NOT EXISTS (SELECT 1 FROM dating_preference_genders WHERE user_id = :me)
+      OR p.gender IN (SELECT gender FROM dating_preference_genders WHERE user_id = :me)
+  )
+  -- hobby filter
+  AND (
+      dp.user_id IS NULL
+      OR NOT EXISTS (SELECT 1 FROM dating_preference_hobbies WHERE user_id = :me)
+      OR EXISTS (
+          SELECT 1 FROM profile_hobbies ph
+          JOIN dating_preference_hobbies dph ON dph.hobby = ph.hobby
+          WHERE ph.user_id = p.user_id AND dph.user_id = :me
+      )
+  )
+ORDER BY hobby_overlap DESC, p.updated_at DESC NULLS LAST
+LIMIT 20;
+```
+
+---
+
+## 8. Additional SQL queries
+
+---
+
+## 9. Indexes and performance
+
+| Index | Column(s) | Reason |
+|-------|-----------|--------|
+| `ix_profiles_updated_at` | `profiles(updated_at)` | Discovery ORDER BY fallback |
+| `ix_profiles_city` | `profiles(city)` | `prefer_same_city` filter |
+| `ix_profile_hobbies_hobby` | `profile_hobbies(hobby)` | Hobby overlap JOIN |
+| `ix_dating_preference_genders_gender` | `dating_preference_genders(gender)` | Gender filter subquery |
+| `ix_dating_preference_hobbies_hobby` | `dating_preference_hobbies(hobby)` | Hobby filter subquery |
+| `uq_swipe_pair` | `swipes(swiper_user_id, target_user_id)` | Prevent duplicate swipes; covers `NOT EXISTS` lookup |
+| `ix_swipes_target_created` | `swipes(target_user_id, created_at)` | Incoming swipe stats |
+| `uq_match_pair` | `matches(user_low_id, user_high_id)` | Prevent duplicate matches |
+| `ix_messages_match_created` | `messages(match_id, created_at)` | Chat thread load (covering index) |
+
+---
+
+## 10. DDL sources
 
 | Artifact | Role |
 |----------|------|
-| `db/schema.sql` | Single-file canonical DDL for the marker/report. |
-| `db/schema.dbml` | DBML for [dbdiagram.io](https://dbdiagram.io) (export ERD image locally; not stored in Git to keep the repo small). |
-| `backend/alembic/versions/` | Versioned migrations applied with Alembic. |
+| `db/schema.sql` | Single-file canonical DDL for the report. |
+| `db/schema.dbml` | DBML for [dbdiagram.io](https://dbdiagram.io) — import to export ERD image. |
+| `backend/alembic/versions/` | Versioned migrations (001–009) applied with Alembic. |
 
 ---
 
-## 8. Controlled vocabularies (Postgres ENUM)
+## 11. Controlled vocabularies (Postgres ENUM)
 
 | ENUM | Values |
 |------|--------|
 | `profile_gender` | `woman`, `man`, `nonbinary` |
-| `looking_for` | `women`, `men`, `everyone` |
-| `hair_color` | `black`, `brown`, `blonde`, `red`, `gray`, `other` |
+| `hobby` | `hiking`, `gaming`, `cooking`, `reading`, `travel`, `music`, `sports`, `art`, `fitness`, `photography`, `yoga`, `dancing`, `movies`, `pets` |
 | `swipe_direction` | `smash`, `pass` |
-
-The database rejects invalid labels at insert time; extend types with `ALTER TYPE ... ADD VALUE` when the product adds options.
