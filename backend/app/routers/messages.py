@@ -4,6 +4,8 @@ import os
 import time
 from pathlib import Path
 
+import cloudinary
+import cloudinary.uploader
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
@@ -17,6 +19,7 @@ router = APIRouter()
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:8000")
 CHAT_DIR = Path(__file__).resolve().parents[2] / "static" / "chat"
 _ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
+_USE_CLOUDINARY = bool(os.environ.get("CLOUDINARY_CLOUD_NAME"))
 
 
 def _get_match_or_403(match_id: int, user_id: int, db: Session) -> Match:
@@ -74,17 +77,27 @@ async def send_message_photo(
     if file.content_type not in _ALLOWED_TYPES:
         raise HTTPException(400, "Only JPEG, PNG, or WebP images are allowed")
 
-    ext = (file.filename or "photo").rsplit(".", 1)[-1].lower()
-    if ext not in ("jpg", "jpeg", "png", "webp"):
-        ext = "jpg"
+    data = await file.read()
 
-    CHAT_DIR.mkdir(parents=True, exist_ok=True)
-    match_dir = CHAT_DIR / str(match_id)
-    match_dir.mkdir(exist_ok=True)
-    filename = f"{int(time.time() * 1000)}_{current_user.id}.{ext}"
-    (match_dir / filename).write_bytes(await file.read())
+    if _USE_CLOUDINARY:
+        result = cloudinary.uploader.upload(
+            data,
+            public_id=f"finder/chat/{match_id}/{int(time.time() * 1000)}_{current_user.id}",
+            overwrite=False,
+            resource_type="image",
+        )
+        image_url = result["secure_url"]
+    else:
+        ext = (file.filename or "photo").rsplit(".", 1)[-1].lower()
+        if ext not in ("jpg", "jpeg", "png", "webp"):
+            ext = "jpg"
+        CHAT_DIR.mkdir(parents=True, exist_ok=True)
+        match_dir = CHAT_DIR / str(match_id)
+        match_dir.mkdir(exist_ok=True)
+        filename = f"{int(time.time() * 1000)}_{current_user.id}.{ext}"
+        (match_dir / filename).write_bytes(data)
+        image_url = f"{BASE_URL}/static/chat/{match_id}/{filename}"
 
-    image_url = f"{BASE_URL}/static/chat/{match_id}/{filename}"
     msg = Message(
         match_id=match_id,
         sender_user_id=current_user.id,
