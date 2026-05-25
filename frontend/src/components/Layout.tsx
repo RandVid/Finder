@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import logo from '../assets/logo.png'
 
 const navLinks = [
   { to: '/discovery', label: 'Discovery' },
@@ -11,7 +12,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <nav className="bg-white border-b border-gray-200 px-4 py-2 flex items-center gap-4">
-        <span className="font-bold text-rose-500 text-base mr-1">Finder</span>
+        <img src={logo} alt="Finder" className="h-8 w-auto shrink-0" />
         {navLinks.map(({ to, label }) => (
           <NavLink
             key={to}
