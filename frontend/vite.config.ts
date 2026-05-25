@@ -7,14 +7,10 @@ export default defineConfig({
   server: {
     allowedHosts: true,
     proxy: {
-      '/auth': 'http://localhost:8000',
-      '/profiles': 'http://localhost:8000',
-      '/discovery': 'http://localhost:8000',
-      '/swipes': 'http://localhost:8000',
-      '/matches': 'http://localhost:8000',
-      '/messages': 'http://localhost:8000',
-      '/stats': 'http://localhost:8000',
-      '/static': 'http://localhost:8000',
+      '/api': {
+        target: 'http://localhost:8000',
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
     },
   },
 })
